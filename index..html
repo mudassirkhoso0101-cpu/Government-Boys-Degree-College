@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Super Over Scorecard</title>
+  <style>
+    :root{
+      --bg: linear-gradient(135deg,#0f172a 0%, #07143a 100%);
+      --card:#0b1220;
+      --accent:#06b6d4;
+      --muted:#94a3b8;
+      --glass: rgba(255,255,255,0.03);
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:var(--bg);color:#e6eef8}
+    .wrap{max-width:980px;margin:32px auto;padding:20px}
+    .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    .title{display:flex;gap:14px;align-items:center}
+    .logo{width:54px;height:54px;border-radius:10px;background:linear-gradient(90deg,#0ea5a4,#3b82f6);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px}
+    h1{font-size:20px;margin:0}
+    p.small{margin:0;color:var(--muted);font-size:13px}
+
+    .scoreboard{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+    .team-card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6);}
+    .team-top{display:flex;align-items:center;justify-content:space-between}
+    .team-name{font-size:16px;font-weight:700}
+    .team-meta{color:var(--muted);font-size:13px}
+    .big-score{font-size:44px;font-weight:800;letter-spacing:1px}
+    .small-meta{display:flex;gap:10px;color:var(--muted);font-size:13px}
+
+    .controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+    .btn{background:var(--glass);border:1px solid rgba(255,255,255,0.04);padding:10px 12px;border-radius:10px;color:#e6eef8;cursor:pointer}
+    .btn:active{transform:translateY(1px)}
+    .btn.primary{background:linear-gradient(90deg,var(--accent),#60a5fa);color:#04263a;font-weight:700;border:none}
+    .btn.ghost{background:transparent;border:1px dashed rgba(255,255,255,0.06)}
+
+    .main{display:grid;grid-template-columns:1fr 360px;gap:14px}
+    .card{background:var(--card);padding:14px;border-radius:12px}
+    .section-title{font-size:13px;color:var(--muted);margin-bottom:10px}
+
+    .ball-buttons{display:flex;flex-wrap:wrap;gap:8px}
+    .ball-btn{width:56px;height:44px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;font-weight:700;cursor:pointer}
+    .ball-btn.small{width:40px;height:40px}
+
+    .timeline{display:flex;gap:8px;flex-wrap:wrap}
+    .ball-pill{min-width:34px;padding:6px 8px;border-radius:999px;background:rgba(255,255,255,0.03);text-align:center;font-weight:700}
+    .ball-pill.good{background:rgba(6,182,212,0.12);color:var(--accent)}
+    .ball-pill.bad{background:rgba(239,68,68,0.12);color:#fb7185}
+
+    .right-col{display:flex;flex-direction:column;gap:12px}
+    .summary-row{display:flex;justify-content:space-between;align-items:center}
+    .winner{padding:10px;border-radius:10px;text-align:center;font-weight:800}
+
+    .footer{margin-top:18px;color:var(--muted);font-size:13px;text-align:center}
+
+    input[type="text"]{background:transparent;border:1px dashed rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:inherit}
+
+    .theme-toggle{display:flex;gap:8px;align-items:center}
+
+    @media (max-width:860px){.main{grid-template-columns:1fr}.scoreboard{grid-template-columns:1fr}.right-col{order:2}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="title">
+        <div class="logo">SO</div>
+        <div>
+          <h1>Super Over Scorecard</h1>
+          <p class="small">Fast, clear and playful scoreboard for your daily superover matches</p>
+        </div>
+      </div>
+      <div class="theme-toggle">
+        <button class="btn ghost" id="resetBtn">Reset</button>
+        <button class="btn" id="undoBtn">Undo</button>
+        <button class="btn primary" id="exportBtn">Copy JSON</button>
+      </div>
+    </div>
+
+    <div class="scoreboard">
+      <div class="team-card" id="teamAcard">
+        <div class="team-top">
+          <div>
+            <div class="team-name"><input id="teamAName" type="text" value="You" /></div>
+            <div class="team-meta">Innings: <span id="teamAinnings">1</span> • Balls: <span id="teamAballs">0/6</span></div>
+          </div>
+          <div style="text-align:right">
+            <div class="big-score" id="teamAruns">0</div>
+            <div class="small-meta">W: <span id="teamAwickets">0</span></div>
+          </div>
+        </div>
+        <div style="margin-top:12px">
+          <div class="section-title">Ball-by-ball</div>
+          <div id="teamAtimeline" class="timeline" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div class="team-card" id="teamBcard">
+        <div class="team-top">
+          <div>
+            <div class="team-name"><input id="teamBName" type="text" value="Friend" /></div>
+            <div class="team-meta">Innings: <span id="teamBinnings">0</span> • Balls: <span id="teamBballs">0/6</span></div>
+          </div>
+          <div style="text-align:right">
+            <div class="big-score" id="teamBruns">0</div>
+            <div class="small-meta">W: <span id="teamBwickets">0</span></div>
+          </div>
+        </div>
+        <div style="margin-top:12px">
+          <div class="section-title">Ball-by-ball</div>
+          <div id="teamBtimeline" class="timeline" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="card">
+        <div class="section-title">Controls — add runs / wicket / extras</div>
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">
+          <div>Active innings: <strong id="activeInningsLabel">Team A</strong></div>
+          <div style="margin-left:auto">Balls left: <strong id="ballsLeft">6</strong></div>
+        </div>
+
+        <div class="ball-buttons" id="buttons">
+          <button class="ball-btn" onclick="addRuns(0)">0</button>
+          <button class="ball-btn" onclick="addRuns(1)">1</button>
+          <button class="ball-btn" onclick="addRuns(2)">2</button>
+          <button class="ball-btn" onclick="addRuns(3)">3</button>
+          <button class="ball-btn" onclick="addRuns(4)">4</button>
+          <button class="ball-btn" onclick="addRuns(6)">6</button>
+          <button class="ball-btn" onclick="addWicket()">W</button>
+          <button class="ball-btn" onclick="addExtra('WD')">WD</button>
+          <button class="ball-btn" onclick="addExtra('NB')">NB</button>
+        </div>
+
+        <div style="margin-top:12px"><small class="section-title">Quick actions</small>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn" onclick="nextBall()">Next Ball (dot if needed)</button>
+            <button class="btn ghost" onclick="switchInnings()">End Innings / Switch</button>
+            <button class="btn ghost" onclick="resetMatch()">Reset Match</button>
+          </div>
+        </div>
+
+        <hr style="border:none;height:1px;background:rgba(255,255,255,0.03);margin:12px 0" />
+        <div class="section-title">Live summary</div>
+        <div class="summary-row"><div>Current score</div><div><strong id="liveSummary">0 / 0 (0.0)</strong></div></div>
+        <div style="margin-top:8px" class="summary-row"><div>Projected (per ball average)</div><div id="projected">—</div></div>
+      </div>
+
+      <aside class="right-col">
+        <div class="card">
+          <div class="section-title">Match status</div>
+          <div id="matchStatus">In progress — Team A batting</div>
+          <div style="height:10px"></div>
+          <div class="section-title">Winner</div>
+          <div id="winner" class="winner">—</div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Match JSON</div>
+          <textarea id="exportArea" style="width:100%;height:180px;background:transparent;border:none;color:#cfeffd;resize:none" readonly></textarea>
+        </div>
+      </aside>
+    </div>
+
+    <div class="footer">Tip: Use "Copy JSON" to save the score in clipboard and share with your friend.</div>
+  </div>
+
+  <script>
+    // Simple Super Over scorecard logic
+    const MAX_BALLS = 6;
+    const state = {
+      teams: [
+        { name: 'You', runs:0, wickets:0, balls:0, timeline:[], innings:1 },
+        { name: 'Friend', runs:0, wickets:0, balls:0, timeline:[], innings:0 }
+      ],
+      active: 0, // 0 -> team A, 1 -> team B
+      history: []
+    };
+
+    // UI refs
+    const refs = {
+      teamAName: document.getElementById('teamAName'),
+      teamBName: document.getElementById('teamBName'),
+      teamAruns: document.getElementById('teamAruns'),
+      teamBruns: document.getElementById('teamBruns'),
+      teamAwickets: document.getElementById('teamAwickets'),
+      teamBwickets: document.getElementById('teamBwickets'),
+      teamAballs: document.getElementById('teamAballs'),
+      teamBballs: document.getElementById('teamBballs'),
+      teamAtimeline: document.getElementById('teamAtimeline'),
+      teamBtimeline: document.getElementById('teamBtimeline'),
+      activeLabel: document.getElementById('activeInningsLabel'),
+      ballsLeft: document.getElementById('ballsLeft'),
+      liveSummary: document.getElementById('liveSummary'),
+      projected: document.getElementById('projected'),
+      matchStatus: document.getElementById('matchStatus'),
+      winner: document.getElementById('winner'),
+      exportArea: document.getElementById('exportArea')
+    };
+
+    // Bind name inputs
+    refs.teamAName.addEventListener('input', ()=> state.teams[0].name = refs.teamAName.value || 'You');
+    refs.teamBName.addEventListener('input', ()=> state.teams[1].name = refs.teamBName.value || 'Friend');
+
+    function render(){
+      refs.teamAruns.textContent = state.teams[0].runs;
+      refs.teamBruns.textContent = state.teams[1].runs;
+      refs.teamAwickets.textContent = state.teams[0].wickets;
+      refs.teamBwickets.textContent = state.teams[1].wickets;
+      refs.teamAballs.textContent = `${state.teams[0].balls}/${MAX_BALLS}`;
+      refs.teamBballs.textContent = `${state.teams[1].balls}/${MAX_BALLS}`;
+      refs.activeLabel.textContent = state.active===0? state.teams[0].name : state.teams[1].name;
+      refs.ballsLeft.textContent = MAX_BALLS - state.teams[state.active].balls;
+
+      // timelines
+      refs.teamAtimeline.innerHTML = '';
+      state.teams[0].timeline.forEach(v=>{ refs.teamAtimeline.appendChild(makePill(v)); });
+      refs.teamBtimeline.innerHTML = '';
+      state.teams[1].timeline.forEach(v=>{ refs.teamBtimeline.appendChild(makePill(v)); });
+
+      // live summary
+      const t = state.teams[state.active];
+      const overs = (t.balls/6).toFixed(1);
+      refs.liveSummary.textContent = `${t.runs} / ${t.wickets} (${t.balls.toFixed(1)} balls)`;
+
+      // projected: runs per ball * 6
+      const perBall = t.balls? (t.runs / t.balls) : 0;
+      refs.projected.textContent = t.balls? Math.round(perBall * MAX_BALLS) + ' (proj)' : '—';
+
+      // match status and winner
+      updateStatusAndWinner();
+
+      // export json
+      refs.exportArea.value = JSON.stringify(state, null, 2);
+    }
+
+    function makePill(val){
+      const el = document.createElement('div');
+      el.className = 'ball-pill';
+      if(/^[46]$/.test(String(val))) el.classList.add('good');
+      if(val==='W' || val==='WD' || val==='NB' || val==='0') {
+        if(val==='W') el.classList.add('bad');
+      }
+      el.textContent = val;
+      return el;
+    }
+
+    function pushHistory(action){ state.history.push(JSON.parse(JSON.stringify(action))); }
+
+    function addRuns(n){
+      const team = state.teams[state.active];
+      pushHistory({op:'addRuns',team:state.active, val:n});
+      team.runs += n;
+      // count ball except for NB/WD (they remain extras and ball not counted)
+      team.timeline.push(String(n));
+      team.balls += 1;
+      checkEndOrUpdate();
+    }
+
+    function addWicket(){
+      const team = state.teams[state.active];
+      pushHistory({op:'wicket',team:state.active});
+      team.wickets += 1;
+      team.timeline.push('W');
+      team.balls += 1;
+      checkEndOrUpdate();
+    }
+
+    function addExtra(type){
+      const team = state.teams[state.active];
+      pushHistory({op:'extra',team:state.active,type});
+      // extras don't count as official ball (in many scoring rules wides/no-balls add a run and ball re-bowled)
+      team.runs += 1; // single run for WD/NB
+      team.timeline.push(type);
+      // do NOT increment balls
+      render();
+    }
+
+    function nextBall(){
+      // If user presses nextBall intentionally for dot ball
+      const team = state.teams[state.active];
+      pushHistory({op:'dot',team:state.active});
+      team.timeline.push('0');
+      team.balls += 1;
+      checkEndOrUpdate();
+    }
+
+    function checkEndOrUpdate(){
+      render();
+      const team = state.teams[state.active];
+      // if innings complete
+      if(team.balls >= MAX_BALLS){
+        if(state.active===0){
+          // end first innings -> switch to second
+          state.teams[0].innings = 1; state.teams[1].innings = 2;
+          state.active = 1;
+          pushHistory({op:'autoSwitch'});
+          alert('End of first super over. Now ' + state.teams[1].name + ' will bat.');
+        } else {
+          // match ended
+          pushHistory({op:'matchEnd'});
+        }
+      }
+      render();
+    }
+
+    function switchInnings(){
+      // manual switch
+      if(state.active===0){
+        state.active = 1;
+        state.teams[0].innings = 1; state.teams[1].innings = 2;
+      } else { state.active = 0; }
+      pushHistory({op:'manualSwitch',active:state.active});
+      render();
+    }
+
+    function updateStatusAndWinner(){
+      const a = state.teams[0], b = state.teams[1];
+      // basic status
+      if(a.balls < MAX_BALLS || b.balls < MAX_BALLS){
+        const batting = state.active===0? a.name : b.name;
+        refs.matchStatus.textContent = `In progress — ${batting} batting`;
+      } else {
+        refs.matchStatus.textContent = 'Match complete';
+      }
+      // decide winner if both innings complete
+      if(a.balls>=MAX_BALLS && b.balls>=MAX_BALLS){
+        if(a.runs > b.runs) refs.winner.textContent = `${a.name} wins by ${a.runs - b.runs} runs`;
+        else if(b.runs > a.runs) refs.winner.textContent = `${b.name} wins by ${b.runs - a.runs} runs`;
+        else refs.winner.textContent = 'Tied — use tie-break rules (e.g. boundary count)';
+      } else { refs.winner.textContent = '—'; }
+    }
+
+    function resetMatch(){
+      if(!confirm('Reset entire match?')) return;
+      state.teams = [ { name: refs.teamAName.value||'You', runs:0, wickets:0, balls:0, timeline:[], innings:1 }, { name: refs.teamBName.value||'Friend', runs:0, wickets:0, balls:0, timeline:[], innings:0 } ];
+      state.active = 0; state.history = [];
+      render();
+    }
+
+    function undo(){
+      const last = state.history.pop();
+      if(!last) return alert('Nothing to undo');
+      // best-effort undo (handles simple actions)
+      const t = state.teams[last.team];
+      if(last.op==='addRuns'){
+        t.runs -= last.val;
+        t.balls -= 1; t.timeline.pop();
+      } else if(last.op==='wicket'){
+        t.wickets -= 1; t.balls -= 1; t.timeline.pop();
+      } else if(last.op==='extra'){
+        t.runs -= 1; t.timeline.pop();
+      } else if(last.op==='dot'){
+        t.balls -= 1; t.timeline.pop();
+      } else if(last.op==='autoSwitch' || last.op==='manualSwitch'){
+        // revert switch
+        state.active = last.team!==undefined? last.team : (state.active===0?1:0);
+      }
+      render();
+    }
+
+    function exportJSON(){
+      navigator.clipboard.writeText(JSON.stringify(state, null, 2)).then(()=>{
+        alert('Match JSON copied to clipboard!');
+      }).catch(()=>{ alert('Could not copy, select the JSON box and copy manually.'); });
+    }
+
+    // buttons
+    document.getElementById('resetBtn').addEventListener('click', ()=> resetMatch());
+    document.getElementById('undoBtn').addEventListener('click', ()=> undo());
+    document.getElementById('exportBtn').addEventListener('click', ()=> exportJSON());
+
+    // initial render
+    render();
+  </script>
+</body>
+</html>
